@@ -1,4 +1,4 @@
-package com.socialfeedapp
+package com.anonymous.socialfeedapp
 
 import android.app.Application
 import android.content.res.Configuration

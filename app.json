@@ -2,6 +2,13 @@
   "expo": {
     "name": "social-feed-app",
     "slug": "social-feed-app",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "plugins": [],
+    "android": {
+      "package": "com.anonymous.socialfeedapp"
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.socialfeedapp"
+    }
   }
 }

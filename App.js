@@ -1,3 +1,4 @@
+// This file will be migrated to App.tsx with TypeScript, navigation, and safe area setup.
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
