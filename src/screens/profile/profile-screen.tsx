@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '../../contexts/user-context';
+import { useUser, userEventEmitter, USER_UPDATED_EVENT } from '../../contexts/user-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +27,22 @@ export function ProfileScreen() {
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [newBio, setNewBio] = useState(user.biography);
   const [isPickingImage, setIsPickingImage] = useState(false);
+
+  useEffect(() => {
+    setNewUsername(user.username);
+    setNewBio(user.biography);
+  }, [user]);
+
+  useEffect(() => {
+    const unsubscribe = userEventEmitter.addListener((updatedUser) => {
+      setNewUsername(updatedUser.username);
+      setNewBio(updatedUser.biography);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const handlePickImage = async () => {
     try {

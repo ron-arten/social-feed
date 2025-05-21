@@ -2,9 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '../../contexts/user-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { dbOperations } from '../../services/database';
 import { getLocalImageSource } from '../../utils/image-require';
+
+type RootStackParamList = {
+  Main: undefined;
+  Profile: undefined;
+  Chat: {
+    otherUserId: string;
+    otherUsername: string;
+    otherProfileImage?: string;
+  };
+  AccountDetails: undefined;
+  Notifications: undefined;
+  BlockedUsers: undefined;
+  Privacy: undefined;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Message {
   id: string;
@@ -51,6 +69,7 @@ function formatTimestamp(timestamp: string) {
 
 export function MessagesScreen() {
   const { user } = useUser();
+  const navigation = useNavigation<NavigationProp>();
   const [conversations, setConversations] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,9 +88,22 @@ export function MessagesScreen() {
     }
   }
 
+  const handleConversationPress = (conversation: Message) => {
+    const otherUserId = conversation.sender_id === user.id ? conversation.receiver_id : conversation.sender_id;
+    navigation.navigate('Chat', {
+      otherUserId,
+      otherUsername: conversation.other_username,
+      otherProfileImage: conversation.other_profile_image,
+    });
+  };
+
   const renderConversationItem = ({ item }: { item: Message }) => {
     return (
-      <TouchableOpacity style={styles.conversationItem}>
+      <TouchableOpacity 
+        style={styles.conversationItem}
+        onPress={() => handleConversationPress(item)}
+        activeOpacity={0.7}
+      >
         <View style={styles.avatarContainer}>
           {item.other_profile_image ? (
             <Image

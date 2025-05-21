@@ -1,6 +1,27 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ImageSourcePropType } from 'react-native';
 import { dbOperations } from '../services/database';
+
+// Custom event emitter implementation
+type EventCallback = (user: User) => void;
+
+class UserEventEmitter {
+  private listeners: EventCallback[] = [];
+
+  addListener(callback: EventCallback) {
+    this.listeners.push(callback);
+    return () => {
+      this.listeners = this.listeners.filter(cb => cb !== callback);
+    };
+  }
+
+  emit(user: User) {
+    this.listeners.forEach(callback => callback(user));
+  }
+}
+
+export const userEventEmitter = new UserEventEmitter();
+export const USER_UPDATED_EVENT = 'userUpdated';
 
 interface User {
   id: string;
@@ -72,7 +93,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       });
       
       // Update in state
-      setUser(prev => ({ ...prev, ...newUser }));
+      const updatedUser = { ...user, ...newUser };
+      setUser(updatedUser);
+      
+      // Emit event for other components to refresh their data
+      userEventEmitter.emit(updatedUser);
     } catch (error) {
       console.error('Error updating user:', error);
       // You might want to show an error message to the user here

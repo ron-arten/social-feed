@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useUser } from '../../contexts/user-context';
+import { useUser, userEventEmitter, USER_UPDATED_EVENT } from '../../contexts/user-context';
 import { useDatabase } from '../../contexts/database-context';
 import { dbOperations } from '../../services/database';
 import { SearchBar } from '../../components/search-bar';
@@ -93,6 +93,16 @@ function FeedScreen() {
       loadPosts();
     }
   }, [isInitialized]);
+
+  useEffect(() => {
+    const unsubscribe = userEventEmitter.addListener(() => {
+      loadPosts();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   async function loadPosts() {
     try {

@@ -11,6 +11,7 @@ import FeedScreen from './src/screens/feed/feed-screen';
 import { ProfileScreen } from './src/screens/profile/profile-screen';
 import { FriendsScreen } from './src/screens/friends/friends-screen';
 import { MessagesScreen } from './src/screens/messages/messages-screen';
+import { ChatScreen } from './src/screens/messages/chat-screen';
 import { AccountDetailsScreen } from './src/screens/settings/account-details-screen';
 import { NotificationsScreen } from './src/screens/settings/notifications-screen';
 import { BlockedUsersScreen } from './src/screens/settings/blocked-users-screen';
@@ -119,6 +120,15 @@ export default function App() {
                   name="Profile" 
                   component={ProfileScreen}
                   options={{
+                    animation: 'slide_from_right',
+                    animationDuration: 200,
+                  }}
+                />
+                <Stack.Screen 
+                  name="Chat" 
+                  component={ChatScreen}
+                  options={{
+                    headerShown: true,
                     animation: 'slide_from_right',
                     animationDuration: 200,
                   }}
