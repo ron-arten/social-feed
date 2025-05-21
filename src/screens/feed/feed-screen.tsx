@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Alert, Platform, ListRenderItem, TextInput, Keyboard, ImageSourcePropType, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CreatePostModal } from '../../components/create-post-modal';
-import * as FileSystem from 'expo-file-system';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,11 +9,15 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView, BottomShee
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useUser } from '../../contexts/user-context';
+import { useDatabase } from '../../contexts/database-context';
+import { dbOperations } from '../../services/database';
 import { SearchBar } from '../../components/search-bar';
+import { getLocalImageSource } from '../../utils/image-require';
 
 dayjs.extend(relativeTime);
 
 interface Comment {
+  id: string;
   text: string;
   username: string;
   timestamp: string;
@@ -24,45 +27,31 @@ interface Comment {
 interface Post {
   id: string;
   author: string;
-  authorProfileImage?: ImageSourcePropType;
+  authorProfileImage?: string;
   content: string;
   image?: string;
   createdAt: string;
   editedAt?: string;
-  likes?: number;
-  comments?: number;
-  shares?: number;
+  likes: number;
+  comments: number;
+  shares: number;
   commentList?: Comment[];
 }
 
-const POSTS_FILE = FileSystem.documentDirectory + 'posts.json';
-
-const initialPosts: Post[] = [
-  { 
-    id: '1', 
-    author: 'ee_person',
-    authorProfileImage: require('../../images/profileImage/christian-buehner-DItYlc26zVI-unsplash.jpg'),
-    content: 'Stakeholder meeting with the team', 
-    image: undefined, 
-    createdAt: dayjs().subtract(2, 'hour').toISOString(), 
-    likes: 356, 
-    comments: 6, 
-    shares: 40 
-  },
-  { 
-    id: '2', 
-    author: 'Isabella Lee', 
-    content: 'Gathered together in this photo are some of the most amazing women!', 
-    image: undefined, 
-    createdAt: dayjs().subtract(1, 'hour').toISOString(), 
-    likes: 120, 
-    comments: 3, 
-    shares: 12 
-  },
-];
+interface DatabasePost {
+  id: string;
+  author: string;
+  author_profile_image?: string;
+  content: string;
+  image_uri?: string;
+  created_at: string;
+  edited_at?: string;
+  likes_count: number;
+  comments_count: number;
+  shares_count: number;
+}
 
 function getAvatarColor(name: string) {
-  // Simple hash for color
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   const color = `hsl(${hash % 360}, 60%, 70%)`;
@@ -83,7 +72,8 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 function FeedScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { user } = useUser();
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const { isInitialized, error } = useDatabase();
+  const [posts, setPosts] = useState<Post[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
@@ -99,26 +89,38 @@ function FeedScreen() {
   const [editingContent, setEditingContent] = useState('');
 
   useEffect(() => {
-    loadPosts();
-  }, []);
+    if (isInitialized) {
+      loadPosts();
+    }
+  }, [isInitialized]);
 
   async function loadPosts() {
     try {
-      const file = await FileSystem.readAsStringAsync(POSTS_FILE);
-      const savedPosts: Post[] = JSON.parse(file);
-      setPosts(savedPosts);
+      const dbPosts = await dbOperations.getPosts() as DatabasePost[];
+      const formattedPosts: Post[] = dbPosts.map(post => ({
+        id: post.id,
+        author: post.author,
+        authorProfileImage: post.author_profile_image ? post.author_profile_image : undefined,
+        content: post.content,
+        image: post.image_uri,
+        createdAt: post.created_at,
+        editedAt: post.edited_at,
+        likes: post.likes_count,
+        comments: post.comments_count,
+        shares: post.shares_count,
+      }));
+      setPosts(formattedPosts);
+      
+      // Load liked status for each post
+      const likedStatus: Record<string, boolean> = {};
+      for (const post of dbPosts) {
+        likedStatus[post.id] = await dbOperations.isPostLiked(post.id, user.id);
+      }
+      setLikedPosts(likedStatus);
     } catch (e) {
-      setPosts(initialPosts);
+      Alert.alert('Error', 'Failed to load posts.');
     } finally {
       setIsLoading(false);
-    }
-  }
-
-  async function savePosts(newPosts: Post[]) {
-    try {
-      await FileSystem.writeAsStringAsync(POSTS_FILE, JSON.stringify(newPosts));
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save posts.');
     }
   }
 
@@ -131,38 +133,46 @@ function FeedScreen() {
       Alert.alert('Validation', 'Please enter text or select an image.');
       return;
     }
-    const newPost: Post = {
-      id: Date.now().toString(),
-      author: user.username,
-      authorProfileImage: user.profileImage,
-      content: text.trim(),
-      image: imageUri,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      comments: 0,
-      shares: 0,
-    };
-    const newPosts = [newPost, ...posts];
-    setPosts(newPosts);
-    await savePosts(newPosts);
+
+    try {
+      // First, ensure the user exists in the database
+      const existingUser = await dbOperations.getUser(user.id);
+      if (!existingUser) {
+        await dbOperations.createUser({
+          id: user.id,
+          username: user.username,
+          profileImage: typeof user.profileImage === 'string' ? user.profileImage : undefined,
+        });
+      }
+
+      const postId = Date.now().toString();
+      await dbOperations.createPost({
+        id: postId,
+        authorId: user.id,
+        content: text.trim(),
+        imageUri,
+      });
+
+      // Reload posts to get the latest data
+      await loadPosts();
+    } catch (e) {
+      console.error('Error creating post:', e);
+      Alert.alert(
+        'Error',
+        'Failed to create post. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   }
 
-  function handleToggleLike(postId: string) {
-    setLikedPosts(prev => {
-      const isLiked = prev[postId];
-      const updated = { ...prev, [postId]: !isLiked };
-      setPosts(posts => posts.map(post =>
-        post.id === postId
-          ? { ...post, likes: (post.likes ?? 0) + (!isLiked ? 1 : -1) }
-          : post
-      ));
-      savePosts(posts.map(post =>
-        post.id === postId
-          ? { ...post, likes: (post.likes ?? 0) + (!isLiked ? 1 : -1) }
-          : post
-      ));
-      return updated;
-    });
+  async function handleToggleLike(postId: string) {
+    try {
+      const isLiked = await dbOperations.toggleLike(postId, user.id);
+      setLikedPosts(prev => ({ ...prev, [postId]: isLiked }));
+      await loadPosts(); // Reload to get updated counts
+    } catch (e) {
+      Alert.alert('Error', 'Failed to update like status.');
+    }
   }
 
   const handleSheetChanges = useCallback((index: number) => {
@@ -172,28 +182,27 @@ function FeedScreen() {
     }
   }, []);
 
-  function handleSaveComment() {
+  async function handleSaveComment() {
     if (!commentSheetPostId || !commentInput.trim()) return;
-    const newComment: Comment = {
-      text: commentInput.trim().slice(0, 100),
-      username: user.username,
-      timestamp: new Date().toISOString(),
-      profileImage: user.profileImage,
-    };
-    setPosts(posts => posts.map(post =>
-      post.id === commentSheetPostId
-        ? {
-            ...post,
-            commentList: [newComment, ...(post.commentList || [])],
-            comments: (post.comments ?? 0) + 1,
-          }
-        : post
-    ));
-    setCommentInput('');
-    if (commentInputRef.current) {
-      commentInputRef.current.clear();
+
+    try {
+      const commentId = Date.now().toString();
+      await dbOperations.createComment({
+        id: commentId,
+        postId: commentSheetPostId,
+        authorId: user.id,
+        content: commentInput.trim().slice(0, 100),
+      });
+
+      setCommentInput('');
+      if (commentInputRef.current) {
+        commentInputRef.current.clear();
+      }
+      Keyboard.dismiss();
+      await loadPosts(); // Reload to get updated comments
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save comment.');
     }
-    Keyboard.dismiss();
   }
 
   function handleOpenCommentSheet(postId: string) {
@@ -224,10 +233,16 @@ function FeedScreen() {
     setSelectedPostId(null);
   }
 
-  function handleDeletePost() {
+  async function handleDeletePost() {
     if (!selectedPostId) return;
-    setPosts(posts => posts.filter(post => post.id !== selectedPostId));
-    handleCloseContextMenu();
+
+    try {
+      await dbOperations.deletePost(selectedPostId);
+      handleCloseContextMenu();
+      await loadPosts(); // Reload to reflect deletion
+    } catch (e) {
+      Alert.alert('Error', 'Failed to delete post.');
+    }
   }
 
   function handleEditPost() {
@@ -240,19 +255,17 @@ function FeedScreen() {
     handleCloseContextMenu();
   }
 
-  function handleSaveEdit() {
+  async function handleSaveEdit() {
     if (!editingPostId) return;
-    setPosts(posts => posts.map(post =>
-      post.id === editingPostId
-        ? {
-            ...post,
-            content: editingContent,
-            editedAt: new Date().toISOString(),
-          }
-        : post
-    ));
-    setEditingPostId(null);
-    setEditingContent('');
+
+    try {
+      await dbOperations.updatePost(editingPostId, editingContent);
+      setEditingPostId(null);
+      setEditingContent('');
+      await loadPosts(); // Reload to get updated content
+    } catch (e) {
+      Alert.alert('Error', 'Failed to update post.');
+    }
   }
 
   function handleCancelEdit() {
@@ -271,7 +284,7 @@ function FeedScreen() {
           >
             {user.profileImage ? (
               <Image 
-                source={user.profileImage} 
+                source={getLocalImageSource(user.profileImage) || { uri: user.profileImage }} 
                 style={styles.profileAvatar} 
                 resizeMode="cover"
               />
@@ -295,7 +308,7 @@ function FeedScreen() {
       <View style={styles.cardHeader}>
         {item.authorProfileImage ? (
           <Image 
-            source={item.authorProfileImage} 
+            source={getLocalImageSource(item.authorProfileImage) || { uri: item.authorProfileImage }} 
             style={styles.avatar} 
             resizeMode="cover"
           />
@@ -349,7 +362,7 @@ function FeedScreen() {
         <Text style={styles.content}>{item.content}</Text>
       )}
       {item.image && (
-        <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" accessibilityLabel="Post image" />
+        <Image source={getLocalImageSource(item.image) || { uri: item.image }} style={styles.cardImage} resizeMode="cover" accessibilityLabel="Post image" />
       )}
       <View style={styles.cardActions}>
         <TouchableOpacity style={[styles.actionGroup, styles.heartActionGroup]} onPress={() => handleToggleLike(item.id)} accessibilityLabel="Like post">
@@ -389,7 +402,7 @@ function FeedScreen() {
 
   return (
     <BottomSheetModalProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f6f7fb' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f6f7fb' }} edges={['top']}>
         <CreatePostModal
           visible={isModalVisible}
           onClose={() => setModalVisible(false)}
@@ -404,7 +417,13 @@ function FeedScreen() {
               {renderHeader()}
             </>
           }
-          contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 0 }}
+          contentContainerStyle={{ 
+            paddingBottom: Platform.select({
+              ios: insets.bottom + 24,
+              android: 24
+            }),
+            paddingHorizontal: 0 
+          }}
           showsVerticalScrollIndicator={false}
         />
         <BottomSheetModal
@@ -705,6 +724,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingTop: 8,
+    paddingBottom: 8,
     borderTopWidth: 1,
     borderTopColor: '#eee',
   },

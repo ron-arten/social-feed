@@ -1,76 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '../../contexts/user-context';
 import { Ionicons } from '@expo/vector-icons';
+import { dbOperations } from '../../services/database';
+import { getLocalImageSource } from '../../utils/image-require';
 
 interface Message {
   id: string;
-  senderId: string;
-  receiverId: string;
+  sender_id: string;
+  receiver_id: string;
   content: string;
-  timestamp: string;
-  senderProfileImage?: any;
-  receiverProfileImage?: any;
+  created_at: string;
+  other_username: string;
+  other_profile_image?: string;
 }
-
-interface Conversation {
-  id: string;
-  participants: {
-    id: string;
-    username: string;
-    profileImage?: any;
-  }[];
-  lastMessage: Message;
-}
-
-// Mock data for demonstration
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    participants: [
-      {
-        id: 'user1',
-        username: 'ee_person',
-        profileImage: require('../../images/profileImage/christian-buehner-DItYlc26zVI-unsplash.jpg'),
-      },
-      {
-        id: 'user2',
-        username: 'john_doe',
-        profileImage: undefined,
-      },
-    ],
-    lastMessage: {
-      id: 'msg1',
-      senderId: 'user2',
-      receiverId: 'user1',
-      content: 'Hey! How are you doing? I wanted to discuss the project timeline.',
-      timestamp: '2024-03-20T10:30:00Z',
-    },
-  },
-  {
-    id: '2',
-    participants: [
-      {
-        id: 'user1',
-        username: 'ee_person',
-        profileImage: require('../../images/profileImage/christian-buehner-DItYlc26zVI-unsplash.jpg'),
-      },
-      {
-        id: 'user3',
-        username: 'sarah_smith',
-        profileImage: undefined,
-      },
-    ],
-    lastMessage: {
-      id: 'msg2',
-      senderId: 'user1',
-      receiverId: 'user3',
-      content: 'The meeting is scheduled for tomorrow at 2 PM.',
-      timestamp: '2024-03-19T15:45:00Z',
-    },
-  },
-];
 
 const { width } = Dimensions.get('window');
 const AVATAR_SIZE = 48;
@@ -107,51 +51,78 @@ function formatTimestamp(timestamp: string) {
 
 export function MessagesScreen() {
   const { user } = useUser();
+  const [conversations, setConversations] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const renderConversationItem = ({ item }: { item: Conversation }) => {
-    const otherParticipant = item.participants.find(p => p.id !== user.username);
-    if (!otherParticipant) return null;
+  useEffect(() => {
+    loadConversations();
+  }, []);
 
+  async function loadConversations() {
+    try {
+      const data = await dbOperations.getConversations(user.id) as Message[];
+      setConversations(data);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const renderConversationItem = ({ item }: { item: Message }) => {
     return (
       <TouchableOpacity style={styles.conversationItem}>
         <View style={styles.avatarContainer}>
-          {otherParticipant.profileImage ? (
+          {item.other_profile_image ? (
             <Image
-              source={otherParticipant.profileImage}
+              source={getLocalImageSource(item.other_profile_image) || { uri: item.other_profile_image }}
               style={styles.avatar}
               resizeMode="cover"
             />
           ) : (
-            <View style={[styles.avatar, { backgroundColor: getAvatarColor(otherParticipant.username) }]}>
+            <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.other_username) }]}>
               <Ionicons name="person" size={24} color="#fff" />
             </View>
           )}
         </View>
         <View style={styles.messageContent}>
           <View style={styles.messageHeader}>
-            <Text style={styles.username}>{otherParticipant.username}</Text>
-            <Text style={styles.timestamp}>{formatTimestamp(item.lastMessage.timestamp)}</Text>
+            <Text style={styles.username}>{item.other_username}</Text>
+            <Text style={styles.timestamp}>{formatTimestamp(item.created_at)}</Text>
           </View>
           <Text style={styles.messagePreview} numberOfLines={1}>
-            {truncateMessage(item.lastMessage.content, MESSAGE_PREVIEW_LENGTH)}
+            {truncateMessage(item.content, MESSAGE_PREVIEW_LENGTH)}
           </Text>
         </View>
       </TouchableOpacity>
     );
   };
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Messages</Text>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Messages</Text>
       </View>
-      {mockConversations.length === 0 ? (
+      {conversations.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No Messages</Text>
         </View>
       ) : (
         <FlatList
-          data={mockConversations}
+          data={conversations}
           renderItem={renderConversationItem}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}

@@ -3,12 +3,51 @@
     "name": "social-feed-app",
     "slug": "social-feed-app",
     "version": "1.0.0",
-    "plugins": [],
-    "android": {
-      "package": "com.anonymous.socialfeedapp"
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "bundleIdentifier": "com.anonymous.socialfeedapp"
-    }
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.socialfeedapp",
+      "buildNumber": "1.0.0"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.anonymous.socialfeedapp",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "expo-sqlite",
+      "expo-image-picker",
+      "expo-file-system",
+      "expo-updates"
+    ],
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/your-project-id"
+    },
+    "runtimeVersion": "1.0.0"
   }
 }
