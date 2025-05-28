@@ -25,7 +25,8 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.socialfeedapp",
-      "versionCode": 1
+      "versionCode": 1,
+      "enableProguardInReleaseBuilds": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -42,7 +43,8 @@
       "expo-sqlite",
       "expo-image-picker",
       "expo-file-system",
-      "expo-updates"
+      "expo-updates",
+      "expo-asset"
     ],
     "updates": {
       "fallbackToCacheTimeout": 0,

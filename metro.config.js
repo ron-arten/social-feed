@@ -4,6 +4,9 @@ const { getDefaultConfig } = require('expo/metro-config');
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
+// Add SQL files to asset extensions
+config.resolver.assetExts.push('sql');
+
 module.exports = {
     ...config,
     resolver: {

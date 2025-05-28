@@ -4,7 +4,7 @@
 -- Seed users
 INSERT OR IGNORE INTO users (id, username, profile_image, biography, created_at, updated_at)
 VALUES 
-  ('1', 'ee_person', 'assets/images/profiles/profile_1.jpg', 'What does it take to install PendoSDK?', datetime('now'), datetime('now')),
+  ('1', 'ee_person', 'assets/images/profiles/profile_1.jpg', 'What''s with that Pendo SDK huh?', datetime('now'), datetime('now')),
   ('2', 'demo_user', 'assets/images/profiles/profile_2.jpg', 'Demo user account for testing', datetime('now'), datetime('now')),
   ('3', 'test_user', 'assets/images/profiles/profile_3.jpg', 'Another test user', datetime('now'), datetime('now')),
   -- Additional users with faker-generated data
@@ -85,13 +85,38 @@ SET
 -- Seed messages
 INSERT OR IGNORE INTO messages (id, sender_id, receiver_id, content, created_at)
 VALUES 
-  ('1', '2', '1', 'Hey! How are you doing? I wanted to discuss the project timeline.', datetime('now', '-2 days')),
-  ('2', '1', '2', 'Hi! I''m doing great. What would you like to discuss?', datetime('now', '-2 days', '+1 hour')),
-  ('3', '2', '1', 'I was thinking we could set up a meeting to go over the requirements.', datetime('now', '-2 days', '+2 hours')),
-  ('4', '3', '1', 'The meeting is scheduled for tomorrow at 2 PM.', datetime('now', '-1 day')),
-  ('5', '1', '3', 'Perfect, I''ll be there!', datetime('now', '-1 day', '+30 minutes')),
-  ('6', '4', '1', 'Hey! I saw your post about the neural interface. That''s fascinating!', datetime('now', '-12 hours')),
-  ('7', '1', '4', 'Thanks! Yes, it''s a really interesting concept.', datetime('now', '-11 hours')),
-  ('8', '5', '1', 'Would you like to collaborate on a new project?', datetime('now', '-6 hours')),
-  ('9', '1', '5', 'I''d love to! What do you have in mind?', datetime('now', '-5 hours')),
-  ('10', '6', '1', 'Your latest post about quantum computing was really insightful.', datetime('now', '-3 hours')); 
+          -- Conversation with user 2 (demo_user)
+          ('1', '2', '1', 'Hey! How are you doing? I wanted to discuss the project timeline.', datetime('now', '-2 days')),
+          ('2', '1', '2', 'Hi! I''m doing great. What would you like to discuss?', datetime('now', '-2 days', '+1 hour')),
+          ('3', '2', '1', 'I was thinking we could set up a meeting to go over the requirements.', datetime('now', '-2 days', '+2 hours')),
+          
+          -- Conversation with user 3 (test_user)
+          ('4', '3', '1', 'The meeting is scheduled for tomorrow at 2 PM.', datetime('now', '-1 day')),
+          ('5', '1', '3', 'Perfect, I''ll be there!', datetime('now', '-1 day', '+30 minutes')),
+          
+          -- Conversation with user 4 (mystic_phoenix)
+          ('6', '4', '1', 'Hey! I saw your post about the neural interface. That''s fascinating!', datetime('now', '-12 hours')),
+          ('7', '1', '4', 'Thanks! Yes, it''s a really interesting concept.', datetime('now', '-11 hours')),
+          
+           -- Conversation with user 5 (quantum_quasar)
+          ('8', '5', '1', 'Would you like to collaborate on a new project?', datetime('now', '-6 hours')),
+          ('9', '1', '5', 'I''d love to! What do you have in mind?', datetime('now', '-5 hours')),
+          -- Conversation with user 6 (cosmic_coder)
+          ('10', '6', '1', 'Your latest post about quantum computing was really insightful.', datetime('now', '-3 hours')),
+          ('11', '1', '6', 'Thank you! I''ve been researching it extensively.', datetime('now', '-2 hours')),
+          
+          -- Conversation with user 7 (neural_ninja)
+          ('12', '7', '1', 'Have you seen the latest developments in neural networks?', datetime('now', '-1 day', '+2 hours')),
+          ('13', '1', '7', 'Yes, the transformer architecture is revolutionary!', datetime('now', '-1 day', '+3 hours')),
+          
+          -- Conversation with user 8 (cyber_sage)
+          ('14', '8', '1', 'I noticed some interesting patterns in the security logs.', datetime('now', '-8 hours')),
+          ('15', '1', '8', 'That''s concerning. Can you share more details?', datetime('now', '-7 hours')),
+          
+          -- Conversation with user 9 (binary_bard)
+          ('16', '9', '1', 'Your code poetry concept is brilliant!', datetime('now', '-4 hours')),
+          ('17', '1', '9', 'Thanks! It''s a fun way to make coding more creative.', datetime('now', '-3 hours')),
+          
+          -- Conversation with user 10 (data_druid)
+          ('18', '10', '1', 'The data visualization you shared was impressive.', datetime('now', '-5 hours')),
+          ('19', '1', '10', 'Glad you liked it! I used D3.js for the animations.', datetime('now', '-4 hours'));

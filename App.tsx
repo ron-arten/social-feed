@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { View, Platform, useWindowDimensions } from 'react-native';
+import { View, Platform, useWindowDimensions, DevSettings, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FeedScreen from './src/screens/feed/feed-screen';
 import { ProfileScreen } from './src/screens/profile/profile-screen';
@@ -19,6 +19,7 @@ import { PrivacyScreen } from './src/screens/settings/privacy-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { UserProvider } from './src/contexts/user-context';
 import { DatabaseProvider } from './src/contexts/database-context';
+import { resetDatabase, initDatabase } from './src/services/database';
 
 
 
@@ -102,6 +103,26 @@ function TabNavigator() {
 }
 
 export default function App() {
+  // Register dev menu items when the app starts
+  React.useEffect(() => {
+    if (__DEV__) {
+      console.log('Registering dev menu items...');
+      DevSettings.addMenuItem('Reset Database', async () => {
+        console.log('Reset Database option selected');
+        try {
+          await resetDatabase();
+          await initDatabase();
+          console.log('Database reset and reinitialized successfully');
+          // Reload the app to ensure clean state
+          DevSettings.reload();
+        } catch (error) {
+          console.error('Error resetting database:', error);
+        }
+      });
+      console.log('Dev menu items registered successfully');
+    }
+  }, []); // Empty dependency array means this runs once when the app starts
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DatabaseProvider>
@@ -131,6 +152,12 @@ export default function App() {
                     headerShown: true,
                     animation: 'slide_from_right',
                     animationDuration: 200,
+                    headerStyle: {
+                      backgroundColor: '#f6f7fb',
+                    },
+                    contentStyle: {
+                      backgroundColor: '#f6f7fb',
+                    },
                   }}
                 />
                 <Stack.Screen 
