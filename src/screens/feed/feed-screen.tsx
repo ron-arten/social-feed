@@ -24,6 +24,14 @@ interface Comment {
   profileImage?: ImageSourcePropType;
 }
 
+interface DatabaseComment {
+  id: string;
+  content: string;
+  username: string;
+  created_at: string;
+  profile_image?: string;
+}
+
 interface Post {
   id: string;
   author: string;
@@ -81,12 +89,14 @@ function FeedScreen() {
   const [commentInput, setCommentInput] = useState('');
   const commentInputRef = useRef<TextInput>(null);
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ['50%'], []);
+  const snapPoints = useMemo(() => ['75%'], []);
   const insets = useSafeAreaInsets();
   const [isContextMenuVisible, setContextMenuVisible] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
 
   useEffect(() => {
     if (isInitialized) {
@@ -101,6 +111,22 @@ function FeedScreen() {
 
     return () => {
       unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => setKeyboardHeight(e.endCoordinates.height)
+    );
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardHeight(0)
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
     };
   }, []);
 
@@ -192,6 +218,36 @@ function FeedScreen() {
     }
   }, []);
 
+  async function loadComments(postId: string) {
+    try {
+      const dbComments = await dbOperations.getComments(postId) as DatabaseComment[];
+      const formattedComments: Comment[] = dbComments.map(comment => ({
+        id: comment.id,
+        text: comment.content,
+        username: comment.username,
+        timestamp: comment.created_at,
+        profileImage: comment.profile_image ? getLocalImageSource(comment.profile_image) || { uri: comment.profile_image } : undefined,
+      }));
+      setComments(prev => ({ ...prev, [postId]: formattedComments }));
+    } catch (e) {
+      console.error('Error loading comments:', e);
+      Alert.alert('Error', 'Failed to load comments.');
+    }
+  }
+
+  async function handleOpenCommentSheet(postId: string) {
+    setCommentSheetPostId(postId);
+    setCommentInput('');
+    if (commentInputRef.current) {
+      commentInputRef.current.clear();
+    }
+    await loadComments(postId); // Load comments when opening the sheet
+    bottomSheetModalRef.current?.present();
+    setTimeout(() => {
+      commentInputRef.current?.focus();
+    }, 100);
+  }
+
   async function handleSaveComment() {
     if (!commentSheetPostId || !commentInput.trim()) return;
 
@@ -209,19 +265,11 @@ function FeedScreen() {
         commentInputRef.current.clear();
       }
       Keyboard.dismiss();
-      await loadPosts(); // Reload to get updated comments
+      await loadPosts(); // Reload to get updated comment count
+      await loadComments(commentSheetPostId); // Reload comments to show the new one
     } catch (e) {
       Alert.alert('Error', 'Failed to save comment.');
     }
-  }
-
-  function handleOpenCommentSheet(postId: string) {
-    setCommentSheetPostId(postId);
-    setCommentInput('');
-    if (commentInputRef.current) {
-      commentInputRef.current.clear();
-    }
-    bottomSheetModalRef.current?.present();
   }
 
   function handleCloseCommentSheet() {
@@ -386,7 +434,7 @@ function FeedScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionGroup} onPress={() => handleOpenCommentSheet(item.id)} accessibilityLabel="Comment on post">
           <Ionicons name="chatbubble-ellipses-outline" size={18} color="#888" />
-          <Text style={styles.actionText}>{item.commentList?.length ?? 0}</Text>
+          <Text style={styles.actionText}>{item.comments}</Text>
         </TouchableOpacity>
         <View style={styles.actionGroup}>
           <Ionicons name="arrow-redo-outline" size={18} color="#888" />
@@ -445,12 +493,33 @@ function FeedScreen() {
           backgroundStyle={{ backgroundColor: '#fff' }}
           handleIndicatorStyle={{ backgroundColor: '#888' }}
           backdropComponent={renderBackdrop}
+          keyboardBehavior="interactive"
+          android_keyboardInputMode="adjustResize"
         >
           <BottomSheetView style={styles.commentSheetContent}>
             <Text style={styles.commentSheetTitle}>Comments</Text>
+            <View style={styles.commentInputRow}>
+              <TextInput
+                ref={commentInputRef}
+                style={styles.commentInput}
+                placeholder="Write a comment..."
+                value={commentInput}
+                onChangeText={text => {
+                  if (text.length <= 100) {
+                    setCommentInput(text);
+                  }
+                }}
+                maxLength={100}
+                multiline
+                accessibilityLabel="Comment input"
+              />
+              <TouchableOpacity onPress={handleSaveComment} style={styles.sendButton} accessibilityLabel="Send comment">
+                <Ionicons name="arrow-up-circle" size={28} color="#6c63ff" />
+              </TouchableOpacity>
+            </View>
             <FlatList
-              data={posts.find(post => post.id === commentSheetPostId)?.commentList || []}
-              keyExtractor={(_, index) => index.toString()}
+              data={comments[commentSheetPostId || ''] || []}
+              keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <View style={styles.commentItem}>
                   {item.profileImage ? (
@@ -458,6 +527,7 @@ function FeedScreen() {
                       source={item.profileImage} 
                       style={styles.commentAvatar} 
                       resizeMode="cover"
+                      accessibilityLabel={`${item.username}'s profile picture`}
                     />
                   ) : (
                     <View style={[styles.commentAvatar, { backgroundColor: getAvatarColor(item.username) }]}>
@@ -473,26 +543,8 @@ function FeedScreen() {
               )}
               style={styles.commentList}
               contentContainerStyle={styles.commentListContent}
+              keyboardShouldPersistTaps="handled"
             />
-            <View style={styles.commentInputRow}>
-              <TextInput
-                ref={commentInputRef}
-                style={styles.commentInput}
-                placeholder="Write a comment..."
-                defaultValue=""
-                onChangeText={text => {
-                  if (text.length <= 100) {
-                    setCommentInput(text);
-                  }
-                }}
-                maxLength={100}
-                multiline
-                accessibilityLabel="Comment input"
-              />
-              <TouchableOpacity onPress={handleSaveComment} style={styles.sendButton} accessibilityLabel="Send comment">
-                <Ionicons name="arrow-up-circle" size={28} color="#6c63ff" />
-              </TouchableOpacity>
-            </View>
           </BottomSheetView>
         </BottomSheetModal>
         <Modal
@@ -689,8 +741,29 @@ const styles = StyleSheet.create({
   commentSheetTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 12,
     color: '#222',
+  },
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingBottom: 12,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  commentInput: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 80,
+    borderColor: '#eee',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    fontSize: 15,
+    backgroundColor: '#f6f7fb',
   },
   commentList: {
     flex: 1,
@@ -729,26 +802,6 @@ const styles = StyleSheet.create({
   commentTime: {
     fontSize: 12,
     color: '#888',
-  },
-  commentInputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingTop: 8,
-    paddingBottom: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  commentInput: {
-    flex: 1,
-    minHeight: 40,
-    maxHeight: 80,
-    borderColor: '#eee',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    fontSize: 15,
-    backgroundColor: '#f6f7fb',
   },
   sendButton: {
     marginLeft: 8,
