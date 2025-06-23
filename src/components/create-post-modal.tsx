@@ -104,7 +104,7 @@ export function CreatePostModal({ visible, onClose, onSubmit }: CreatePostModalP
   async function handlePickImage() {
     setIsPicking(true);
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.7,
     });
