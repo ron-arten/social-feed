@@ -30,6 +30,9 @@ allprojects {
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
+    maven {
+        url = uri("https://software.mobile.pendo.io/artifactory/androidx-release")
+    }
   }
 }
 

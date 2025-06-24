@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ImageSourcePropType } from 'react-native';
 import { dbOperations } from '../services/database';
+import { PendoSDK } from 'rn-pendo-sdk';
 
 // Custom event emitter implementation
 type EventCallback = (user: User) => void;
@@ -66,14 +67,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       try {
         const dbUser = await dbOperations.getUser(defaultUser.id) as DatabaseUser | null;
         if (dbUser) {
-          setUser({
+          const updatedUser = {
             id: dbUser.id,
             username: dbUser.username,
             profileImage: dbUser.profile_image || '',
             biography: dbUser.biography || '',
             createdAt: dbUser.created_at,
             updatedAt: dbUser.updated_at,
-          });
+          };
+          setUser(updatedUser);
+          
+          // Initialize Pendo Session where your visitor is being identified (e.g., login, register, etc.).
+          const visitorId = updatedUser.username;
+          const accountId = updatedUser.id;
+          const visitorData = {
+            'Username': updatedUser.username,
+            'Profile Image': updatedUser.profileImage ? 'Yes' : 'No',
+            'Has Biography': updatedUser.biography ? 'Yes' : 'No',
+            'Created At': updatedUser.createdAt,
+          };
+          const accountData = {
+            'User ID': updatedUser.id,
+            'Account Type': 'Individual',
+            'Last Updated': updatedUser.updatedAt,
+          };
+
+          PendoSDK.startSession(visitorId, accountId, visitorData, accountData);
         }
       } catch (error) {
         console.error('Error loading user data:', error);

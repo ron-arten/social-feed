@@ -13,8 +13,11 @@ import { useDatabase } from '../../contexts/database-context';
 import { dbOperations } from '../../services/database';
 import { SearchBar } from '../../components/search-bar';
 import { getLocalImageSource } from '../../utils/image-require';
+import {WithPendoModal} from 'rn-pendo-sdk';    
 
 dayjs.extend(relativeTime);
+
+const PendoBottomSheetModal = WithPendoModal(BottomSheetModal);
 
 interface Comment {
   id: string;
@@ -88,7 +91,7 @@ function FeedScreen() {
   const [commentSheetPostId, setCommentSheetPostId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState('');
   const commentInputRef = useRef<TextInput>(null);
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const bottomSheetModalRef = useRef<any>(null);
   const snapPoints = useMemo(() => ['75%'], []);
   const insets = useSafeAreaInsets();
   const [isContextMenuVisible, setContextMenuVisible] = useState(false);
@@ -97,6 +100,7 @@ function FeedScreen() {
   const [editingContent, setEditingContent] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
+
 
   useEffect(() => {
     if (isInitialized) {
@@ -484,12 +488,13 @@ function FeedScreen() {
           }}
           showsVerticalScrollIndicator={false}
         />
-        <BottomSheetModal
+        <PendoBottomSheetModal
           ref={bottomSheetModalRef}
           index={0}
           snapPoints={snapPoints}
           enablePanDownToClose
           onDismiss={handleCloseCommentSheet}
+          onChange={handleSheetChanges}
           backgroundStyle={{ backgroundColor: '#fff' }}
           handleIndicatorStyle={{ backgroundColor: '#888' }}
           backdropComponent={renderBackdrop}
@@ -546,7 +551,7 @@ function FeedScreen() {
               keyboardShouldPersistTaps="handled"
             />
           </BottomSheetView>
-        </BottomSheetModal>
+        </PendoBottomSheetModal>
         <Modal
           visible={isContextMenuVisible}
           transparent
