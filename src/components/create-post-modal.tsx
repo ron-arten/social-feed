@@ -13,6 +13,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
+import {WithPendoModal} from 'rn-pendo-sdk';    
 
 interface CreatePostModalProps {
   visible: boolean;
@@ -28,7 +29,7 @@ export function CreatePostModal({ visible, onClose, onSubmit }: CreatePostModalP
   const [imageUri, setImageUri] = useState<string | undefined>(undefined);
   const [isPicking, setIsPicking] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  
+  const PendoBottomSheetModal = WithPendoModal(BottomSheetModal);
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   
   // Dynamic snap points based on image presence
@@ -126,9 +127,9 @@ export function CreatePostModal({ visible, onClose, onSubmit }: CreatePostModalP
     setImageUri(undefined);
     handleDismissModal();
   }
-
+// Original BottomSheetModal here
   return (
-    <BottomSheetModal
+    <PendoBottomSheetModal
       ref={bottomSheetModalRef}
       index={0}
       snapPoints={snapPoints}
@@ -218,7 +219,8 @@ export function CreatePostModal({ visible, onClose, onSubmit }: CreatePostModalP
           </TouchableOpacity>
         </View>
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </PendoBottomSheetModal> 
+    // Original BottomSheetModal here
   );
 }
 

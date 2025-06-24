@@ -20,11 +20,22 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { UserProvider } from './src/contexts/user-context';
 import { DatabaseProvider } from './src/contexts/database-context';
 import { resetDatabase, initDatabase } from './src/services/database';
+import {PendoSDK, NavigationLibraryType} from "rn-pendo-sdk";
+import {WithPendoReactNavigation} from 'rn-pendo-sdk'    
+function initPendo() {
+    const navigationOptions = { 'library': NavigationLibraryType.ReactNavigation };
+    const key = 'YOUR_API_KEY_HERE';
+    //note the following API will only setup initial configuration, to start collect analytics use start session
+    PendoSDK.setDebugMode(true);
+    PendoSDK.setup(key, navigationOptions);
+}
 
+initPendo();
 
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();   
+const PendoNavigationContainer = WithPendoReactNavigation(NavigationContainer);    
 
 function TabNavigator() {
   const insets = useSafeAreaInsets();
@@ -128,7 +139,8 @@ export default function App() {
       <DatabaseProvider>
         <UserProvider>
           <SafeAreaProvider>
-            <NavigationContainer>
+            {/* <NavigationContainer> */}
+            <PendoNavigationContainer>
               <Stack.Navigator 
                 screenOptions={{ 
                   headerShown: false,
@@ -194,7 +206,8 @@ export default function App() {
                 />
               </Stack.Navigator>
               <ExpoStatusBar style="auto" />
-            </NavigationContainer>
+              {/* Normal NavigationContainer goes here */}
+            </PendoNavigationContainer>
           </SafeAreaProvider>
         </UserProvider>
       </DatabaseProvider>
