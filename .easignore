@@ -1,0 +1,19 @@
+# Files and directories to exclude from the EAS build upload
+# Intentionally NOT ignoring .env so it is included in remote builds
+
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+.DS_Store
+.git/
+.gitignore
+
+

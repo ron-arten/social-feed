@@ -82,14 +82,16 @@ export function FriendsScreen() {
           name="FriendsList" 
           component={FriendsListScreen}
           options={{
-            tabBarLabel: 'Friends'
+            tabBarLabel: 'Friends',
+            tabBarTestID: 'friends-tab'
           }}
         />
         <Tab.Screen 
           name="Requests" 
           component={RequestsScreen}
           options={{
-            tabBarLabel: 'Requests'
+            tabBarLabel: 'Requests',
+            tabBarTestID: 'requests-tab'
           }}
         />
       </Tab.Navigator>

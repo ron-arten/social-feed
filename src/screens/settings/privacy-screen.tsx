@@ -23,6 +23,7 @@ export function PrivacyScreen() {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           accessibilityLabel="Back to profile"
+          testID="back-button"
         >
           <Ionicons name="arrow-back" size={24} color="#6c63ff" />
         </TouchableOpacity>

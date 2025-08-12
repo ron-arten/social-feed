@@ -391,6 +391,7 @@ export function ChatScreen() {
               style={[styles.sendButton, (!newMessage.trim() || isSending) && styles.sendButtonDisabled]}
               onPress={handleSendPress}
               disabled={!newMessage.trim() || isSending}
+              testID="send-message-button"
             >
               {isSending ? (
                 <ActivityIndicator size="small" color="#fff" />

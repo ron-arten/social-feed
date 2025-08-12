@@ -5,6 +5,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import { View, Platform, useWindowDimensions, DevSettings, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FeedScreen from './src/screens/feed/feed-screen';
@@ -22,12 +24,22 @@ import { DatabaseProvider } from './src/contexts/database-context';
 import { resetDatabase, initDatabase } from './src/services/database';
 import {PendoSDK, NavigationLibraryType} from "rn-pendo-sdk";
 import {WithPendoReactNavigation} from 'rn-pendo-sdk'    
+function getPendoApiKey(): string {
+    const extraFromConstants = (Constants.expoConfig?.extra as any) ?? undefined;
+    const extraFromUpdates = ((Updates as any).manifest?.extra as any) ?? undefined;
+    return extraFromConstants?.pendoApiKey ?? extraFromUpdates?.pendoApiKey ?? '';
+}
+
 function initPendo() {
-    const navigationOptions = { 'library': NavigationLibraryType.ReactNavigation };
-    const key = 'YOUR_API_KEY_HERE';
-    //note the following API will only setup initial configuration, to start collect analytics use start session
-    PendoSDK.setDebugMode(true);
-    PendoSDK.setup(key, navigationOptions);
+    const navigationOptions = { library: NavigationLibraryType.ReactNavigation };
+    const key = getPendoApiKey();
+    // note the following API will only setup initial configuration, to start collect analytics use start session
+    if (key && typeof key === 'string' && key.length > 0) {
+      PendoSDK.setDebugMode(true);
+      PendoSDK.setup(key, navigationOptions);
+    } else if (__DEV__) {
+      console.warn('Pendo API key not found. Set PENDO_API_KEY in .env or EAS env.');
+    }
 }
 
 initPendo();
@@ -64,7 +76,8 @@ function TabNavigator() {
     // iOS dynamic padding
     const basePadding = 8;
     const hasHomeIndicator = insets.bottom > 20;
-    return hasHomeIndicator ? basePadding : 12;
+    // Increase padding on devices with home indicator to clear the bottom edge
+    return hasHomeIndicator ? 16 : 12;
   };
 
   return (
@@ -89,8 +102,8 @@ function TabNavigator() {
           fontSize: Math.min(12, width * 0.03), // Responsive font size
           fontWeight: '600',
           marginBottom: Platform.select({
-            ios: 0,
-            android: 4,
+            ios: 10,
+            android: 10,
           }),
         },
         tabBarIcon: ({ color, size }) => {
