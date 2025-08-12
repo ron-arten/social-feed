@@ -48,7 +48,11 @@ export function SearchBar() {
             },
           ]}
         >
-          <TouchableOpacity onPress={toggleSearch} style={styles.searchButton}>
+          <TouchableOpacity 
+            onPress={toggleSearch} 
+            style={styles.searchButton}
+            testID="search-toggle-button"
+          >
             <Ionicons name="search" size={24} color="#666" />
           </TouchableOpacity>
           <Animated.View

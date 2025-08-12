@@ -3,6 +3,8 @@
 # dependencies
 node_modules/
 
+# (keep .env out of git)
+
 # Expo
 .expo/
 dist/
@@ -30,6 +32,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript

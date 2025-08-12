@@ -343,6 +343,7 @@ function FeedScreen() {
             onPress={() => navigation.navigate('Profile')}
             style={styles.profileButton}
             accessibilityLabel="Go to profile"
+            testID="profile-button"
           >
             {user.profileImage ? (
               <Image 
@@ -358,7 +359,11 @@ function FeedScreen() {
           </TouchableOpacity>
           <SearchBar />
         </View>
-        <TouchableOpacity onPress={handleCreatePost} style={styles.createPostButton}>
+        <TouchableOpacity 
+          onPress={handleCreatePost} 
+          style={styles.createPostButton}
+          testID="create-post-button"
+        >
           <Ionicons name="add-circle-outline" size={24} color="#6c63ff" />
         </TouchableOpacity>
       </View>
@@ -392,6 +397,7 @@ function FeedScreen() {
           style={styles.menuButton} 
           accessibilityLabel="More options"
           onPress={() => handleOpenContextMenu(item.id)}
+          testID="post-menu-button"
         >
           <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
         </TouchableOpacity>
@@ -409,12 +415,14 @@ function FeedScreen() {
             <TouchableOpacity 
               style={[styles.editButton, styles.cancelButton]} 
               onPress={handleCancelEdit}
+              testID="cancel-edit-button"
             >
               <Text style={styles.editButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.editButton, styles.saveButton]} 
               onPress={handleSaveEdit}
+              testID="save-edit-button"
             >
               <Text style={[styles.editButtonText, { color: '#fff' }]}>Save</Text>
             </TouchableOpacity>
@@ -427,7 +435,17 @@ function FeedScreen() {
         <Image source={getLocalImageSource(item.image) || { uri: item.image }} style={styles.cardImage} resizeMode="cover" accessibilityLabel="Post image" />
       )}
       <View style={styles.cardActions}>
-        <TouchableOpacity style={[styles.actionGroup, styles.heartActionGroup]} onPress={() => handleToggleLike(item.id)} accessibilityLabel="Like post">
+        <TouchableOpacity 
+          style={[styles.actionGroup, styles.heartActionGroup]} 
+          onPress={() => handleToggleLike(item.id)} 
+          accessibilityRole="button"
+          accessibilityLabel={`Like post. Currently ${item.likes ?? 0} likes`}
+          accessibilityHint="Double tap to like or unlike this post"
+          accessibilityState={{ 
+            selected: likedPosts[item.id] || false 
+          }}
+          testID="like-button"
+        >
           <Ionicons
             name={likedPosts[item.id] ? 'heart-dislike-outline' : 'heart-outline'}
             size={18}
@@ -436,7 +454,14 @@ function FeedScreen() {
           />
           <Text style={styles.actionText}>{item.likes ?? 0}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionGroup} onPress={() => handleOpenCommentSheet(item.id)} accessibilityLabel="Comment on post">
+        <TouchableOpacity 
+          style={styles.actionGroup} 
+          onPress={() => handleOpenCommentSheet(item.id)} 
+          accessibilityRole="button"
+          accessibilityLabel={`Comment on post. Currently ${item.comments} comments`}
+          accessibilityHint="Double tap to view and add comments"
+          testID="comment-button"
+        >
           <Ionicons name="chatbubble-ellipses-outline" size={18} color="#888" />
           <Text style={styles.actionText}>{item.comments}</Text>
         </TouchableOpacity>
@@ -518,7 +543,12 @@ function FeedScreen() {
                 multiline
                 accessibilityLabel="Comment input"
               />
-              <TouchableOpacity onPress={handleSaveComment} style={styles.sendButton} accessibilityLabel="Send comment">
+              <TouchableOpacity 
+                onPress={handleSaveComment} 
+                style={styles.sendButton} 
+                accessibilityLabel="Send comment"
+                testID="send-comment-button"
+              >
                 <Ionicons name="arrow-up-circle" size={28} color="#6c63ff" />
               </TouchableOpacity>
             </View>
@@ -567,6 +597,7 @@ function FeedScreen() {
               <TouchableOpacity 
                 style={styles.contextMenuItem}
                 onPress={handleEditPost}
+                testID="edit-post-button"
               >
                 <Ionicons name="pencil-outline" size={20} color="#6c63ff" />
                 <Text style={[styles.contextMenuText, { color: '#6c63ff' }]}>Edit</Text>
@@ -574,6 +605,7 @@ function FeedScreen() {
               <TouchableOpacity 
                 style={styles.contextMenuItem}
                 onPress={handleDeletePost}
+                testID="delete-post-button"
               >
                 <Ionicons name="trash-outline" size={20} color="#e74c3c" />
                 <Text style={[styles.contextMenuText, { color: '#e74c3c' }]}>Delete</Text>

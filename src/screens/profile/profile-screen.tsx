@@ -101,6 +101,7 @@ export function ProfileScreen() {
           style={styles.backButton}
           onPress={() => navigation.navigate('Main')}
           accessibilityLabel="Back to feed"
+          testID="back-to-feed-button"
         >
           <Ionicons name="home-outline" size={24} color="#6c63ff" />
         </TouchableOpacity>
@@ -112,6 +113,7 @@ export function ProfileScreen() {
             disabled={isPickingImage}
             style={styles.profileImageContainer}
             accessibilityLabel="Change profile picture"
+            testID="profile-image-button"
           >
             {user.profileImage ? (
               <Image
@@ -143,6 +145,7 @@ export function ProfileScreen() {
                 style={styles.saveButton}
                 onPress={handleSaveUsername}
                 accessibilityLabel="Save username"
+                testID="save-username-button"
               >
                 <Ionicons name="checkmark" size={24} color="#6c63ff" />
               </TouchableOpacity>
@@ -152,6 +155,7 @@ export function ProfileScreen() {
               style={styles.usernameContainer}
               onPress={() => setIsEditingUsername(true)}
               accessibilityLabel="Edit username"
+              testID="edit-username-button"
             >
               <Text style={styles.username}>{user.username}</Text>
               <Ionicons name="pencil" size={16} color="#666" style={styles.editIcon} />
@@ -173,6 +177,7 @@ export function ProfileScreen() {
                 style={styles.saveButton}
                 onPress={handleSaveBio}
                 accessibilityLabel="Save biography"
+                testID="save-bio-button"
               >
                 <Ionicons name="checkmark" size={24} color="#6c63ff" />
               </TouchableOpacity>
@@ -182,6 +187,7 @@ export function ProfileScreen() {
               style={styles.bioContainer}
               onPress={() => setIsEditingBio(true)}
               accessibilityLabel="Edit biography"
+              testID="edit-bio-button"
             >
               <Text style={styles.biography}>{user.biography}</Text>
               <Ionicons name="pencil" size={16} color="#666" style={styles.editIcon} />

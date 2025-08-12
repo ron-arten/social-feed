@@ -181,6 +181,7 @@ export function CreatePostModal({ visible, onClose, onSubmit }: CreatePostModalP
             style={styles.imageButton}
             onPress={handlePickImage} 
             disabled={isPicking}
+            testID="image-picker-button"
           >
             <Ionicons 
               name={imageUri ? "image" : "image-outline"} 
@@ -197,6 +198,7 @@ export function CreatePostModal({ visible, onClose, onSubmit }: CreatePostModalP
           <TouchableOpacity 
             style={[styles.actionButton, styles.cancelButton]} 
             onPress={handleClose}
+            testID="cancel-post-button"
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
@@ -209,6 +211,7 @@ export function CreatePostModal({ visible, onClose, onSubmit }: CreatePostModalP
             ]} 
             onPress={handleSubmit}
             disabled={!text.trim() && !imageUri}
+            testID="submit-post-button"
           >
             <Text style={[
               styles.postButtonText,

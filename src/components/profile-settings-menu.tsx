@@ -47,6 +47,11 @@ const settingsMenuItems: SettingsMenuItem[] = [
 export function ProfileSettingsMenu() {
   const navigation = useNavigation<NavigationProp>();
 
+  const getTestId = (title: string) => {
+    // Convert title to kebab-case testID
+    return title.toLowerCase().replace(/\s+/g, '-') + '-menu-item';
+  };
+
   return (
     <View style={styles.container}>
       {settingsMenuItems.map((item, index) => (
@@ -58,6 +63,7 @@ export function ProfileSettingsMenu() {
           ]}
           onPress={() => navigation.navigate(item.screen)}
           accessibilityLabel={`Go to ${item.title}`}
+          testID={getTestId(item.title)}
         >
           <View style={styles.menuItemContent}>
             <Ionicons name={item.icon} size={24} color="#6c63ff" />
