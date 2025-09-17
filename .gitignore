@@ -40,3 +40,7 @@ yarn-error.*
 
 # Ensure src/ is not ignored
 !src/
+
+# Ignore native build folders so clones build from scratch
+ios/
+android/
