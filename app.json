@@ -3,6 +3,7 @@
     "name": "social-feed-app",
     "slug": "social-feed-app",
     "version": "1.1.0",
+    "scheme": "socialfeed",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -34,26 +35,18 @@
     },
     "plugins": [
       [
-        "expo-build-properties",
+        "rn-pendo-sdk",
         {
-          "ios": {
-            "useFrameworks": "static"
-          }
+          "ios-scheme": "pendo-e4b7d3e2",
+          "android-scheme": "pendo-e4b7d3e2"
         }
       ],
       "expo-sqlite",
       "expo-image-picker",
       "expo-file-system",
       "expo-updates",
-      "expo-asset",
-      [
-        "rn-pendo-sdk",
-        {
-          "ios-scheme": "YOUR_IOS_SCHEME_ID",
-          "android-scheme": "YOUR_ANDROID_SCHEME_ID"
-          
-        }
-      ]
+      "expo-asset"
+		
     ],
     "updates": {
       "fallbackToCacheTimeout": 0,

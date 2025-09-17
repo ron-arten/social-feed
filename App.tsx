@@ -5,9 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import Constants from 'expo-constants';
-import * as Updates from 'expo-updates';
-import { View, Platform, useWindowDimensions, DevSettings, StatusBar } from 'react-native';
+import { Platform, useWindowDimensions, DevSettings } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FeedScreen from './src/screens/feed/feed-screen';
 import { ProfileScreen } from './src/screens/profile/profile-screen';
@@ -22,48 +20,69 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { UserProvider } from './src/contexts/user-context';
 import { DatabaseProvider } from './src/contexts/database-context';
 import { resetDatabase, initDatabase } from './src/services/database';
-import {PendoSDK, NavigationLibraryType} from "rn-pendo-sdk";
-import {WithPendoReactNavigation} from 'rn-pendo-sdk'    
-function getPendoApiKey(): string {
-    const extraFromConstants = (Constants.expoConfig?.extra as any) ?? undefined;
-    const extraFromUpdates = ((Updates as any).manifest?.extra as any) ?? undefined;
-    return extraFromConstants?.pendoApiKey ?? extraFromUpdates?.pendoApiKey ?? '';
-}
+import { PendoSDK, NavigationLibraryType } from "rn-pendo-sdk";
+import { WithPendoReactNavigation } from 'rn-pendo-sdk'
+
 
 function initPendo() {
-    const navigationOptions = { library: NavigationLibraryType.ReactNavigation };
-    const key = getPendoApiKey();
-    // note the following API will only setup initial configuration, to start collect analytics use start session
-    if (key && typeof key === 'string' && key.length > 0) {
-      PendoSDK.setDebugMode(true);
-      PendoSDK.setup(key, navigationOptions);
-    } else if (__DEV__) {
-      console.warn('Pendo API key not found. Set PENDO_API_KEY in .env or EAS env.');
-    }
+  const navigationOptions = { library: NavigationLibraryType.ReactNavigation };
+  // note the following API will only setup initial configuration, to start collect analytics use start session
+
+  // Debug environment variable resolution
+  console.log('PENDO_API_KEY:', process.env.PENDO_API_KEY);
+  console.log('PENDO_API_KEY type:', typeof process.env.PENDO_API_KEY);
+  console.log('PENDO_API_KEY length:', process.env.PENDO_API_KEY?.length);
+  
+  if (!process.env.PENDO_API_KEY) {
+    console.error('❌ PENDO_API_KEY is not defined! Check your .env file and babel configuration.');
+    return;
+  }
+  
+  if (process.env.PENDO_API_KEY === 'your-pendo-api-key-here') {
+    console.warn('⚠️ PENDO_API_KEY is still using placeholder value. Replace it with your actual API key.');
+  }
+
+  PendoSDK.setDebugMode(true);
+  PendoSDK.setup(process.env.PENDO_API_KEY, navigationOptions);
 }
 
 initPendo();
 
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();   
-const PendoNavigationContainer = WithPendoReactNavigation(NavigationContainer);    
+const Stack = createNativeStackNavigator();
+const PendoNavigationContainer = WithPendoReactNavigation(NavigationContainer);
+
+const linking = {
+  prefixes: ['socialfeed://'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Feed: 'feed',
+          Friends: 'friends',
+          Messages: 'messages',
+        },
+      },
+    },
+  },
+};
 
 function TabNavigator() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  
+
   // Calculate dynamic tab bar height based on device
   const getTabBarHeight = () => {
     if (Platform.OS === 'android') {
       return 70;
     }
-    
+
     // iOS dynamic height calculation
     const baseHeight = 49; // Standard iOS tab bar height
     const bottomInset = insets.bottom;
     const hasHomeIndicator = bottomInset > 20; // Devices with home indicator have larger bottom inset
-    
+
     return baseHeight + (hasHomeIndicator ? bottomInset : 0);
   };
 
@@ -72,7 +91,7 @@ function TabNavigator() {
     if (Platform.OS === 'android') {
       return 8;
     }
-    
+
     // iOS dynamic padding
     const basePadding = 8;
     const hasHomeIndicator = insets.bottom > 20;
@@ -111,7 +130,7 @@ function TabNavigator() {
             ios: Math.min(24, width * 0.06), // Responsive icon size for iOS
             android: 24,
           });
-          
+
           if (route.name === 'Feed') return <Ionicons name="home-outline" size={iconSize} color={color} />;
           if (route.name === 'Friends') return <Ionicons name="people-outline" size={iconSize} color={color} />;
           if (route.name === 'Messages') return <Ionicons name="chatbubble-ellipses-outline" size={iconSize} color={color} />;
@@ -153,25 +172,25 @@ export default function App() {
         <UserProvider>
           <SafeAreaProvider>
             {/* <NavigationContainer> */}
-            <PendoNavigationContainer>
-              <Stack.Navigator 
-                screenOptions={{ 
+            <PendoNavigationContainer linking={linking}>
+              <Stack.Navigator
+                screenOptions={{
                   headerShown: false,
                   animation: 'slide_from_left',
                   animationDuration: 200,
                 }}
               >
                 <Stack.Screen name="Main" component={TabNavigator} />
-                <Stack.Screen 
-                  name="Profile" 
+                <Stack.Screen
+                  name="Profile"
                   component={ProfileScreen}
                   options={{
                     animation: 'slide_from_right',
                     animationDuration: 200,
                   }}
                 />
-                <Stack.Screen 
-                  name="Chat" 
+                <Stack.Screen
+                  name="Chat"
                   component={ChatScreen}
                   options={{
                     headerShown: true,
@@ -185,32 +204,32 @@ export default function App() {
                     },
                   }}
                 />
-                <Stack.Screen 
-                  name="AccountDetails" 
+                <Stack.Screen
+                  name="AccountDetails"
                   component={AccountDetailsScreen}
                   options={{
                     animation: 'slide_from_right',
                     animationDuration: 200,
                   }}
                 />
-                <Stack.Screen 
-                  name="Notifications" 
+                <Stack.Screen
+                  name="Notifications"
                   component={NotificationsScreen}
                   options={{
                     animation: 'slide_from_right',
                     animationDuration: 200,
                   }}
                 />
-                <Stack.Screen 
-                  name="BlockedUsers" 
+                <Stack.Screen
+                  name="BlockedUsers"
                   component={BlockedUsersScreen}
                   options={{
                     animation: 'slide_from_right',
                     animationDuration: 200,
                   }}
                 />
-                <Stack.Screen 
-                  name="Privacy" 
+                <Stack.Screen
+                  name="Privacy"
                   component={PrivacyScreen}
                   options={{
                     animation: 'slide_from_right',
