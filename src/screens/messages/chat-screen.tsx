@@ -337,7 +337,7 @@ export function ChatScreen() {
               />
             ) : (
               <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.sender_username) }]}>
-                <Ionicons name="person" size={20} color="#00000" />
+                <Ionicons name="person" size={20} color="#000000" />
               </View>
             )}
           </View>
