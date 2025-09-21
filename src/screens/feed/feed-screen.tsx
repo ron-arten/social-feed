@@ -10,7 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useUser, userEventEmitter, USER_UPDATED_EVENT } from '../../contexts/user-context';
 import { useDatabase } from '../../contexts/database-context';
-import { dbOperations } from '../../services/database';
+import { dbOperations, getLikedPostIds } from '../../services/database';
 import { SearchBar } from '../../components/search-bar';
 import { getLocalImageSource } from '../../utils/image-require';
 import {WithPendoModal} from 'rn-pendo-sdk';    
@@ -150,12 +150,15 @@ function FeedScreen() {
         shares: post.shares_count,
       }));
       setPosts(formattedPosts);
-      
+
       // Load liked status for each post
-      const likedStatus: Record<string, boolean> = {};
-      for (const post of dbPosts) {
-        likedStatus[post.id] = await dbOperations.isPostLiked(post.id, user.id);
-      }
+      const postIds = dbPosts.map(post => post.id);
+      const likedPostIds = await getLikedPostIds(user.id, postIds);
+      const likedSet = new Set(likedPostIds);
+      const likedStatus = postIds.reduce<Record<string, boolean>>((acc, id) => {
+        acc[id] = likedSet.has(id);
+        return acc;
+      }, {});
       setLikedPosts(likedStatus);
     } catch (e) {
       Alert.alert('Error', 'Failed to load posts.');

@@ -527,4 +527,19 @@ export const dbOperations = {
       ORDER BY m.created_at ASC
     `, [userId1, userId2, userId2, userId1]);
   }
-}; 
+};
+
+export async function getLikedPostIds(userId: string, postIds: string[]): Promise<string[]> {
+  if (postIds.length === 0) {
+    return [];
+  }
+
+  const db = await getDatabase();
+  const placeholders = postIds.map(() => '?').join(', ');
+  const rows = await db.getAllAsync<{ post_id: string }>(
+    `SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (${placeholders})`,
+    [userId, ...postIds]
+  );
+
+  return rows.map(row => row.post_id);
+}
