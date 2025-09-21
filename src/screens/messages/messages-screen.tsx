@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '../../contexts/user-context';
@@ -73,20 +73,37 @@ export function MessagesScreen() {
   const [conversations, setConversations] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadConversations();
-  }, []);
+  const loadConversations = useCallback(
+    async (showLoading = false) => {
+      if (showLoading) {
+        setIsLoading(true);
+      }
 
-  async function loadConversations() {
-    try {
-      const data = await dbOperations.getConversations(user.id) as Message[];
-      setConversations(data);
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
+      try {
+        const data = await dbOperations.getConversations(user.id);
+        setConversations(data as Message[]);
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+      } finally {
+        if (showLoading) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [user.id],
+  );
+
+  useEffect(() => {
+    loadConversations(true);
+  }, [loadConversations]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadConversations();
+    });
+
+    return unsubscribe;
+  }, [navigation, loadConversations]);
 
   const handleConversationPress = (conversation: Message) => {
     const otherUserId = conversation.sender_id === user.id ? conversation.receiver_id : conversation.sender_id;
