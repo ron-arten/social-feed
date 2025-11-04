@@ -11,6 +11,7 @@ type RootStackParamList = {
   Notifications: undefined;
   BlockedUsers: undefined;
   Privacy: undefined;
+  Debug: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -41,6 +42,11 @@ const settingsMenuItems: SettingsMenuItem[] = [
     title: 'Privacy',
     icon: 'lock-closed-outline',
     screen: 'Privacy',
+  },
+  {
+    title: 'Debug',
+    icon: 'bug-outline',
+    screen: 'Debug',
   },
 ];
 

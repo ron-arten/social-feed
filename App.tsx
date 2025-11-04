@@ -16,6 +16,7 @@ import { AccountDetailsScreen } from './src/screens/settings/account-details-scr
 import { NotificationsScreen } from './src/screens/settings/notifications-screen';
 import { BlockedUsersScreen } from './src/screens/settings/blocked-users-screen';
 import { PrivacyScreen } from './src/screens/settings/privacy-screen';
+import { DebugScreen } from './src/screens/settings/debug-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { UserProvider } from './src/contexts/user-context';
 import { DatabaseProvider } from './src/contexts/database-context';
@@ -231,6 +232,14 @@ export default function App() {
                 <Stack.Screen
                   name="Privacy"
                   component={PrivacyScreen}
+                  options={{
+                    animation: 'slide_from_right',
+                    animationDuration: 200,
+                  }}
+                />
+                <Stack.Screen
+                  name="Debug"
+                  component={DebugScreen}
                   options={{
                     animation: 'slide_from_right',
                     animationDuration: 200,
